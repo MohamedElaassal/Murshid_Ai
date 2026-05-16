@@ -1,0 +1,11 @@
+services:
+  mourchid-db:
+    image: postgres:16
+    container_name: mourchid-db
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: mourchid
+      POSTGRES_USER: mourchid
+      POSTGRES_PASSWORD: hackathon2025
