@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
 
@@ -21,10 +22,6 @@ Route::post('/login', function () {
     ])->withInput();
 })->name('login.submit');
 
-Route::get('/app', function () {
-    if (!Session::get('is_admin')) {
-        return redirect('/');
-    }
-
-    return view('app');
-})->name('app');
+Route::middleware('admin.session')->group(function () {
+    Route::get('/app', [DashboardController::class, 'index'])->name('app');
+});
