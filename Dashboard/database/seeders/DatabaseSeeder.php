@@ -10,7 +10,7 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        Report::factory()->count(500)->create();
+        Report::factory()->count(120)->create();
 
         $agronomists = [
             ['name' => 'فاطمة الزهراء بنعلي', 'region' => 'Souss-Massa', 'phone' => '+212661234567', 'email' => 'fatima.benali@onca.gov.ma', 'active_tickets' => 7],
@@ -28,5 +28,7 @@ class DatabaseSeeder extends Seeder
         foreach ($agronomists as $agronomist) {
             Agronomist::create($agronomist);
         }
+
+        $this->call(OutbreakClusterSeeder::class);
     }
 }

@@ -3,10 +3,16 @@ import * as React from 'react'
 import { cn } from '../../lib/utils'
 
 export const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
+  ({ className, style, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn('rounded-xl border border-gray-200 bg-white shadow-sm', className)}
+      className={cn('rounded-2xl border shadow-sm transition-colors duration-300', className)}
+      style={{
+        backgroundColor: 'var(--mourchid-surface)',
+        borderColor: 'var(--mourchid-border)',
+        boxShadow: 'var(--mourchid-shadow)',
+        ...style,
+      }}
       {...props}
     />
   )
@@ -16,15 +22,20 @@ Card.displayName = 'Card'
 
 export const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn('flex items-center justify-between p-4', className)} {...props} />
+    <div ref={ref} className={cn('flex items-center justify-between p-5 pb-2', className)} {...props} />
   )
 )
 
 CardHeader.displayName = 'CardHeader'
 
 export const CardTitle = React.forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTMLHeadingElement>>(
-  ({ className, ...props }, ref) => (
-    <h3 ref={ref} className={cn('text-sm font-semibold text-gray-800', className)} {...props} />
+  ({ className, style, ...props }, ref) => (
+    <h3
+      ref={ref}
+      className={cn('text-sm font-semibold tracking-tight', className)}
+      style={{ color: 'var(--mourchid-text)', ...style }}
+      {...props}
+    />
   )
 )
 
@@ -32,7 +43,7 @@ CardTitle.displayName = 'CardTitle'
 
 export const CardContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn('p-4 pt-0', className)} {...props} />
+    <div ref={ref} className={cn('p-5 pt-2', className)} {...props} />
   )
 )
 

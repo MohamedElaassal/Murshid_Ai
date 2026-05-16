@@ -44,7 +44,46 @@ export interface Agronomist {
   active_tickets: number
 }
 
-export interface DashboardProps {
+export type OutbreakSeverity = 'low' | 'medium' | 'high'
+
+export interface OutbreakAlert {
+  id: string
+  detected_disease: string
+  region: string | null
+  crop_type: string | null
+  centroid_latitude: number
+  centroid_longitude: number
+  radius_km: number
+  report_count: number
+  density_percent: number
+  severity: OutbreakSeverity
+  message: string
+  report_ids: string[] | null
+  status: 'active' | 'acknowledged' | 'resolved'
+  read_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface OutbreakZone {
+  id: string
+  detected_disease: string
+  region: string | null
+  centroid_latitude: number
+  centroid_longitude: number
+  radius_km: number
+  report_count: number
+  severity: OutbreakSeverity
+  density_percent: number
+}
+
+export interface SharedPageProps {
+  show_outbreak_modal: boolean
+  outbreak_alerts: OutbreakAlert[]
+  unread_alert_count: number
+}
+
+export interface DashboardProps extends SharedPageProps {
   total_reports_today: number
   active_outbreaks: number
   ai_resolution_rate: number
@@ -53,6 +92,7 @@ export interface DashboardProps {
   map_markers: MapMarker[]
   disease_breakdown: DiseaseBreakdown[]
   top_regions: { region: string; count: number }[]
+  outbreak_zones: OutbreakZone[]
 }
 
 export type Lang = 'FR' | 'AR' | 'EN'
@@ -66,3 +106,8 @@ export type TranslationKey =
   | 'loading' | 'no_data' | 'last_30_days' | 'agronomists' | 'search'
   | 'see_more' | 'see_less' | 'chemical' | 'phone' | 'feedback'
   | 'openstreetmap_attribution'
+  | 'notifications' | 'outbreak_alert' | 'outbreak_risk_title' | 'outbreak_risk_body'
+  | 'view_on_map' | 'mark_read' | 'mark_all_read' | 'no_notifications'
+  | 'unread_alerts' | 'potential_outbreak' | 'reports_clustered' | 'dismiss'
+  | 'severity_low' | 'severity_medium' | 'severity_high' | 'alert_history'
+  | 'dark_mode' | 'light_mode' | 'switch_language'

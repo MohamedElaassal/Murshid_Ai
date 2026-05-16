@@ -4,16 +4,20 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePage } from '@inertiajs/react'
 
 import { AppLayout } from '../Layouts/AppLayout'
+import { OutbreakAlertModal } from '../components/OutbreakAlertModal'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
 import { useLang } from '../hooks/useLang'
+import { useTheme } from '../hooks/useTheme'
 import {
   DashboardProps,
   DiseaseReport,
   MapMarker,
+  OutbreakAlert,
+  OutbreakZone,
   TranslationKey,
 } from '../types'
 
@@ -34,6 +38,10 @@ interface LeafletTileLayer {
 
 interface LeafletCircleMarker {
   bindPopup: (content: string) => void
+}
+
+interface LeafletCircle {
+  bindPopup: (content: string) => LeafletCircle
 }
 
 const diseaseColors: Record<string, string> = {
@@ -100,12 +108,12 @@ const statusToKey = (status: DiseaseReport['status']): TranslationKey => {
 
 const statusClassName = (status: DiseaseReport['status']): string => {
   if (status === 'CLOSED_SUCCESS') {
-    return 'bg-green-100 text-green-800 border-green-200'
+    return 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30 dark:text-emerald-300'
   }
   if (status === 'CLOSED_FAILED') {
-    return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+    return 'bg-amber-500/15 text-amber-700 border-amber-500/30 dark:text-amber-300'
   }
-  return 'bg-gray-100 text-gray-600 border-gray-200'
+  return 'bg-slate-500/10 text-slate-600 border-slate-500/20 dark:text-slate-300'
 }
 
 const exportCsv = (rows: DiseaseReport[], t: (key: TranslationKey) => string): void => {
@@ -149,18 +157,43 @@ const exportCsv = (rows: DiseaseReport[], t: (key: TranslationKey) => string): v
   URL.revokeObjectURL(url)
 }
 
+const outbreakZoneColor = (severity: OutbreakZone['severity']): string => {
+  if (severity === 'high') return '#dc2626'
+  if (severity === 'medium') return '#ea580c'
+  return '#ca8a04'
+}
+
 const Dashboard = (): JSX.Element => {
   const { props } = usePage<DashboardProps>()
   const { t, lang } = useLang()
+  const { isDark } = useTheme()
 
   const [filterRegion, setFilterRegion] = useState<string>('all')
   const [filterDisease, setFilterDisease] = useState<string>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [showAll, setShowAll] = useState<boolean>(false)
+  const [showLoginAlert, setShowLoginAlert] = useState<boolean>(props.show_outbreak_modal)
   const attributionText = t('openstreetmap_attribution')
 
   const mapRef = useRef<LeafletMap | null>(null)
   const markersLayerRef = useRef<LeafletLayerGroup | null>(null)
+  const zonesLayerRef = useRef<LeafletLayerGroup | null>(null)
+  const mapSectionRef = useRef<HTMLElement | null>(null)
+
+  const primaryAlert = useMemo(
+    () => props.outbreak_alerts.find((alert) => alert.status === 'active') ?? null,
+    [props.outbreak_alerts],
+  )
+
+  const unreadActiveAlerts = useMemo(
+    () => (primaryAlert && !primaryAlert.read_at ? [primaryAlert] : []),
+    [primaryAlert],
+  )
+
+  const focusMapOnAlert = (alert: OutbreakAlert): void => {
+    mapSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    mapRef.current?.setView([alert.centroid_latitude, alert.centroid_longitude], 9)
+  }
 
   const filteredMarkers = useMemo(() => {
     return props.map_markers.filter((marker: MapMarker) => {
@@ -202,24 +235,66 @@ const Dashboard = (): JSX.Element => {
     }
 
     const map = L.map('mourchid-map').setView([31.7917, -7.0926], 5) as LeafletMap
-    const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    const tileUrl = isDark
+      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+
+    const tiles = L.tileLayer(tileUrl, {
       attribution: attributionText,
     }) as LeafletTileLayer
 
     tiles.addTo(map)
 
-    const layerGroup = L.layerGroup() as LeafletLayerGroup
-    layerGroup.addTo(map)
+    const markersLayer = L.layerGroup() as LeafletLayerGroup
+    markersLayer.addTo(map)
+
+    const zonesLayer = L.layerGroup() as LeafletLayerGroup
+    zonesLayer.addTo(map)
 
     mapRef.current = map
-    markersLayerRef.current = layerGroup
+    markersLayerRef.current = markersLayer
+    zonesLayerRef.current = zonesLayer
 
     return () => {
       mapRef.current?.remove()
       mapRef.current = null
       markersLayerRef.current = null
+      zonesLayerRef.current = null
     }
-  }, [attributionText])
+  }, [attributionText, isDark])
+
+  useEffect(() => {
+    if (!zonesLayerRef.current) {
+      return
+    }
+
+    zonesLayerRef.current.clearLayers()
+
+    props.outbreak_zones.forEach((zone) => {
+      const color = outbreakZoneColor(zone.severity)
+      const circle = L.circle([zone.centroid_latitude, zone.centroid_longitude], {
+        color,
+        fillColor: color,
+        fillOpacity: 0.15,
+        radius: zone.radius_km * 1000,
+        weight: 2,
+        dashArray: '6 4',
+      }) as LeafletCircle
+
+      const popup = `
+        <div>
+          <div><strong>${t('potential_outbreak')}</strong></div>
+          <div>${zone.detected_disease}</div>
+          <div>${zone.region}</div>
+          <div>${zone.report_count} ${t('reports_clustered')}</div>
+          <div>${zone.density_percent}%</div>
+        </div>
+      `
+
+      circle.bindPopup(popup)
+      zonesLayerRef.current?.addLayer(circle)
+    })
+  }, [props.outbreak_zones, t, lang])
 
   useEffect(() => {
     if (!markersLayerRef.current) {
@@ -255,13 +330,61 @@ const Dashboard = (): JSX.Element => {
   }, [filteredMarkers, t, lang])
 
   return (
-    <AppLayout>
+    <AppLayout onFocusMap={focusMapOnAlert}>
+      <OutbreakAlertModal
+        alerts={unreadActiveAlerts}
+        open={showLoginAlert && unreadActiveAlerts.length > 0}
+        onClose={() => setShowLoginAlert(false)}
+        onViewMap={() => {
+          setShowLoginAlert(false)
+          if (unreadActiveAlerts[0]) {
+            focusMapOnAlert(unreadActiveAlerts[0])
+          }
+        }}
+      />
+
+      {primaryAlert && (
+        <div
+          className="mx-4 md:mx-8 mt-5 rounded-2xl border px-4 py-3.5 flex items-start gap-3 rtl:flex-row-reverse"
+          style={{
+            borderColor: 'color-mix(in srgb, var(--mourchid-accent) 50%, transparent)',
+            background:
+              'linear-gradient(135deg, color-mix(in srgb, var(--mourchid-accent) 12%, var(--mourchid-surface)), var(--mourchid-surface))',
+          }}
+        >
+          <div
+            className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+            style={{ backgroundColor: 'color-mix(in srgb, var(--mourchid-accent) 25%, transparent)' }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--mourchid-accent)" strokeWidth="2">
+              <path d="M10.3 3.3 2.6 17.2a2 2 0 0 0 1.8 2.8h15.2a2 2 0 0 0 1.8-2.8L13.7 3.3a2 2 0 0 0-3.4 0z" />
+              <path d="M12 9v4" />
+            </svg>
+          </div>
+          <div className="rtl:text-right flex-1 min-w-0">
+            <p className="text-sm font-semibold">{t('outbreak_risk_title')}</p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--mourchid-muted)' }}>
+              {primaryAlert.detected_disease} · {primaryAlert.region} — {primaryAlert.report_count}{' '}
+              {t('reports_clustered')} ({primaryAlert.density_percent}%)
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="shrink-0 h-8 text-xs"
+            onClick={() => focusMapOnAlert(primaryAlert)}
+          >
+            {t('view_on_map')}
+          </Button>
+        </div>
+      )}
+
       <section className="grid grid-cols-1 gap-4 px-4 pt-6 sm:grid-cols-3 md:px-8 mb-6 rtl:text-right">
         <Card>
           <CardContent className="flex items-start justify-between">
             <div>
-              <p className="text-xs text-gray-500 mb-1">{t('reports_today')}</p>
-              <p className="text-3xl font-semibold text-[#111827]">{props.total_reports_today}</p>
+              <p className="text-xs mb-1 font-medium" style={{ color: 'var(--mourchid-muted)' }}>{t('reports_today')}</p>
+              <p className="text-3xl font-bold tracking-tight">{props.total_reports_today}</p>
             </div>
             <svg
               width="24"
@@ -282,8 +405,8 @@ const Dashboard = (): JSX.Element => {
         <Card>
           <CardContent className="flex items-start justify-between">
             <div>
-              <p className="text-xs text-gray-500 mb-1">{t('active_outbreaks')}</p>
-              <p className="text-3xl font-semibold text-[#111827]">{props.active_outbreaks}</p>
+              <p className="text-xs mb-1 font-medium" style={{ color: 'var(--mourchid-muted)' }}>{t('active_outbreaks')}</p>
+              <p className="text-3xl font-bold tracking-tight">{props.active_outbreaks}</p>
             </div>
             <svg
               width="24"
@@ -303,8 +426,8 @@ const Dashboard = (): JSX.Element => {
         <Card>
           <CardContent className="flex items-start justify-between">
             <div>
-              <p className="text-xs text-gray-500 mb-1">{t('ai_resolution_rate')}</p>
-              <p className="text-3xl font-semibold text-[#111827]">{props.ai_resolution_rate}%</p>
+              <p className="text-xs mb-1 font-medium" style={{ color: 'var(--mourchid-muted)' }}>{t('ai_resolution_rate')}</p>
+              <p className="text-3xl font-bold tracking-tight">{props.ai_resolution_rate}%</p>
             </div>
             <svg
               width="24"
@@ -364,10 +487,24 @@ const Dashboard = (): JSX.Element => {
         </Select>
       </section>
 
-      <section className="px-4 md:px-8 mb-6 rtl:text-right">
+      <section ref={mapSectionRef} className="px-4 md:px-8 mb-6 rtl:text-right">
         <Card>
           <CardHeader>
-            <CardTitle>{t('epidemiological_map')}</CardTitle>
+            <CardTitle className="flex items-center justify-between gap-2 rtl:flex-row-reverse">
+              <span>{t('epidemiological_map')}</span>
+              {primaryAlert && (
+                <Badge
+                  variant="outline"
+                  style={{
+                    backgroundColor: 'color-mix(in srgb, var(--mourchid-accent) 15%, transparent)',
+                    color: 'var(--mourchid-accent)',
+                    borderColor: 'color-mix(in srgb, var(--mourchid-accent) 40%, transparent)',
+                  }}
+                >
+                  1 {t('potential_outbreak')}
+                </Badge>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div id="mourchid-map" className="w-full h-[300px] md:h-[420px] rounded-lg z-0" />
@@ -377,7 +514,9 @@ const Dashboard = (): JSX.Element => {
                   <span
                     className={`inline-block w-3 h-3 rounded-full ${diseaseColorClasses[disease]}`}
                   />
-                  <span className="text-xs text-gray-600 ml-1 rtl:ml-0 rtl:mr-1">{disease}</span>
+                  <span className="text-xs ml-1 rtl:ml-0 rtl:mr-1" style={{ color: 'var(--mourchid-muted)' }}>
+                    {disease}
+                  </span>
                 </div>
               ))}
             </div>
@@ -390,39 +529,77 @@ const Dashboard = (): JSX.Element => {
           <CardHeader>
             <CardTitle>{t('reports_last_7_days')}</CardTitle>
           </CardHeader>
-          <CardContent className="flex items-end justify-around gap-2 h-44">
-            {props.reports_last_7_days.map((day) => {
-              const height = Math.round((day.count / maxCount) * 160)
-              return (
-                <div key={day.date} className="flex flex-col items-center gap-1">
-                  <span className="text-xs text-gray-400">{day.count}</span>
+          <CardContent>
+            <div className="relative h-52 flex items-end justify-between gap-1 px-1">
+              <div
+                className="absolute inset-x-0 bottom-7 flex flex-col justify-between h-[calc(100%-1.75rem)] pointer-events-none"
+                aria-hidden
+              >
+                {[0, 1, 2, 3].map((line) => (
                   <div
-                    className="bg-[#1a5c38] rounded-t-sm w-8"
-                    style={{ height: `${height}px` }}
+                    key={line}
+                    className="border-t border-dashed w-full"
+                    style={{ borderColor: 'var(--mourchid-border)' }}
                   />
-                  <span className="text-xs text-gray-500">{day.day_label}</span>
-                </div>
-              )
-            })}
+                ))}
+              </div>
+              {props.reports_last_7_days.map((day) => {
+                const height = Math.max(8, Math.round((day.count / maxCount) * 140))
+                return (
+                  <div key={day.date} className="flex flex-1 flex-col items-center gap-1.5 group">
+                    <span
+                      className="text-[11px] font-semibold tabular-nums"
+                      style={{ color: 'var(--mourchid-primary)' }}
+                    >
+                      {day.count}
+                    </span>
+                    <div
+                      className="w-full max-w-[2.25rem] rounded-t-lg transition-all duration-300 group-hover:scale-y-105 origin-bottom"
+                      style={{
+                        height: `${height}px`,
+                        background:
+                          'linear-gradient(180deg, var(--mourchid-primary), color-mix(in srgb, var(--mourchid-primary) 55%, #000))',
+                        boxShadow:
+                          '0 4px 14px color-mix(in srgb, var(--mourchid-primary) 35%, transparent)',
+                      }}
+                    />
+                    <span className="text-[11px]" style={{ color: 'var(--mourchid-muted)' }}>
+                      {day.day_label}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
           </CardContent>
         </Card>
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>{t('disease')}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3.5">
             {props.disease_breakdown.map((item) => {
               const width = Math.round((item.count / maxDiseaseCount) * 100)
+              const barColor = diseaseColors[item.disease] ?? 'var(--mourchid-primary)'
               return (
                 <div key={item.disease}>
-                  <p className="text-sm text-gray-700 mb-1">{item.disease}</p>
-                  <div className="w-full bg-gray-100 rounded-full h-2">
+                  <div className="flex items-center justify-between gap-2 mb-1.5 rtl:flex-row-reverse">
+                    <p className="text-sm font-medium truncate">{item.disease}</p>
+                    <span className="text-xs font-semibold tabular-nums" style={{ color: 'var(--mourchid-muted)' }}>
+                      {item.count}
+                    </span>
+                  </div>
+                  <div
+                    className="w-full rounded-full h-2.5 overflow-hidden"
+                    style={{ backgroundColor: 'var(--mourchid-chart-track)' }}
+                  >
                     <div
-                      className="bg-[#1a5c38] h-2 rounded-full"
-                      style={{ width: `${width}%` }}
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: `${width}%`,
+                        background: `linear-gradient(90deg, ${barColor}, color-mix(in srgb, ${barColor} 70%, white))`,
+                      }}
                     />
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">{item.count}</p>
                 </div>
               )
             })}

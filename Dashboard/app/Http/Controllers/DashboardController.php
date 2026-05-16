@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\OutbreakAlert;
 use App\Models\Report;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -13,10 +14,7 @@ class DashboardController extends Controller
     public function index(Request $request): Response
     {
         $totalReportsToday = Report::whereDate('created_at', Carbon::today())->count();
-        $activeOutbreaks = Report::where('status', 'OPEN')
-            ->where('created_at', '>=', Carbon::now()->subDays(7))
-            ->distinct('detected_disease')
-            ->count('detected_disease');
+        $activeOutbreaks = OutbreakAlert::query()->where('status', 'active')->count();
 
         $resolvedCount = Report::whereIn('status', ['CLOSED_SUCCESS', 'CLOSED_FAILED'])->count();
         $successCount = Report::where('status', 'CLOSED_SUCCESS')->count();
@@ -73,6 +71,27 @@ class DashboardController extends Controller
             ->orderByDesc('count')
             ->get();
 
+        $outbreakAlerts = OutbreakAlert::query()
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->get();
+
+        $outbreakZones = OutbreakAlert::query()
+            ->where('status', 'active')
+            ->orderByDesc('report_count')
+            ->limit(1)
+            ->get([
+                'id',
+                'detected_disease',
+                'region',
+                'centroid_latitude',
+                'centroid_longitude',
+                'radius_km',
+                'report_count',
+                'severity',
+                'density_percent',
+            ]);
+
         return Inertia::render('Dashboard', [
             'total_reports_today' => $totalReportsToday,
             'active_outbreaks' => $activeOutbreaks,
@@ -82,6 +101,9 @@ class DashboardController extends Controller
             'map_markers' => $mapMarkers,
             'disease_breakdown' => $diseaseBreakdown,
             'top_regions' => $topRegions,
+            'outbreak_alerts' => $outbreakAlerts,
+            'outbreak_zones' => $outbreakZones,
+            'unread_alert_count' => $outbreakAlerts->whereNull('read_at')->count(),
         ]);
     }
 }

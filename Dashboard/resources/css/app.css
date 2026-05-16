@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
@@ -10,4 +12,37 @@
 @theme {
     --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+:root {
+    --mourchid-bg: #f4f6f4;
+    --mourchid-surface: #ffffff;
+    --mourchid-surface-elevated: #ffffff;
+    --mourchid-border: #e5e7eb;
+    --mourchid-text: #0f172a;
+    --mourchid-muted: #64748b;
+    --mourchid-primary: #1a5c38;
+    --mourchid-primary-soft: #e8f3ed;
+    --mourchid-accent: #c9922a;
+    --mourchid-chart-track: #eef2f0;
+    --mourchid-shadow: 0 1px 3px rgb(15 23 42 / 0.06), 0 8px 24px rgb(15 23 42 / 0.04);
+}
+
+.dark {
+    --mourchid-bg: #0b1220;
+    --mourchid-surface: #111827;
+    --mourchid-surface-elevated: #1a2332;
+    --mourchid-border: #2a3548;
+    --mourchid-text: #f1f5f9;
+    --mourchid-muted: #94a3b8;
+    --mourchid-primary: #3d9b6a;
+    --mourchid-primary-soft: #142a1f;
+    --mourchid-accent: #e0b04a;
+    --mourchid-chart-track: #1e293b;
+    --mourchid-shadow: 0 1px 3px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.25);
+}
+
+body {
+    background-color: var(--mourchid-bg);
+    color: var(--mourchid-text);
 }
