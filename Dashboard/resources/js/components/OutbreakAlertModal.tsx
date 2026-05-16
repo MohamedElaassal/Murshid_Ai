@@ -2,6 +2,7 @@ import { router } from '@inertiajs/react'
 
 import { Button } from './ui/button'
 import { useLang } from '../hooks/useLang'
+import { localizeDisease, localizeRegion } from '../translations'
 import { OutbreakAlert } from '../types'
 
 interface OutbreakAlertModalProps {
@@ -17,7 +18,7 @@ export const OutbreakAlertModal = ({
   onClose,
   onViewMap,
 }: OutbreakAlertModalProps): JSX.Element | null => {
-  const { t } = useLang()
+  const { t, lang } = useLang()
 
   if (!open || alerts.length === 0) {
     return null
@@ -59,10 +60,10 @@ export const OutbreakAlertModal = ({
               className="rounded-lg border border-amber-200 bg-amber-50/50 px-3 py-2 rtl:text-right"
             >
               <p className="text-sm font-medium text-gray-900">
-                {t('potential_outbreak')}: {alert.detected_disease}
+                {t('potential_outbreak')}: {localizeDisease(lang, alert.detected_disease)}
               </p>
               <p className="text-xs text-gray-600 mt-0.5">
-                {alert.region} — {alert.report_count} {t('reports_clustered')} (
+                {localizeRegion(lang, alert.region)} — {alert.report_count} {t('reports_clustered')} (
                 {alert.density_percent}%)
               </p>
             </div>

@@ -12,9 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
 import { useLang } from '../hooks/useLang'
 import { useTheme } from '../hooks/useTheme'
+import { localeByLang, localizeCrop, localizeDisease, localizeRegion } from '../translations'
 import {
   DashboardProps,
   DiseaseReport,
+  Lang,
   MapMarker,
   OutbreakAlert,
   OutbreakZone,
@@ -90,14 +92,27 @@ const diseases = [
   'Rhizoctonia',
 ]
 
-const formatTime = (value: string): string => {
+const formatTime = (value: string, lang: Lang): string => {
   const date = new Date(value)
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const month = String(date.getMonth() + 1).padStart(2, '0')
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
 
-  return `${hours}:${minutes} ${day}/${month}`
+  return new Intl.DateTimeFormat(localeByLang[lang], {
+    hour: '2-digit',
+    minute: '2-digit',
+    day: '2-digit',
+    month: '2-digit',
+  }).format(date)
+}
+
+const formatDayLabel = (day: { date: string; day_label: string }, lang: Lang): string => {
+  const date = new Date(day.date)
+  if (Number.isNaN(date.getTime())) {
+    return day.day_label
+  }
+
+  return new Intl.DateTimeFormat(localeByLang[lang], { day: '2-digit', month: '2-digit' }).format(date)
 }
 
 const statusToKey = (status: DiseaseReport['status']): TranslationKey => {
@@ -116,7 +131,7 @@ const statusClassName = (status: DiseaseReport['status']): string => {
   return 'bg-slate-500/10 text-slate-600 border-slate-500/20 dark:text-slate-300'
 }
 
-const exportCsv = (rows: DiseaseReport[], t: (key: TranslationKey) => string): void => {
+const exportCsv = (rows: DiseaseReport[], t: (key: TranslationKey) => string, lang: Lang): void => {
   const header = [
     t('ticket'),
     t('time'),
@@ -134,10 +149,10 @@ const exportCsv = (rows: DiseaseReport[], t: (key: TranslationKey) => string): v
     const statusLabel = t(statusToKey(row.status))
     return [
       row.report_id,
-      formatTime(row.created_at),
-      row.region ?? '',
-      row.crop_type,
-      row.detected_disease,
+      formatTime(row.created_at, lang),
+      localizeRegion(lang, row.region),
+      localizeCrop(lang, row.crop_type),
+      localizeDisease(lang, row.detected_disease),
       statusLabel,
       row.prescribed_chemical,
       row.farmer_feedback ?? '',
@@ -284,8 +299,8 @@ const Dashboard = (): JSX.Element => {
       const popup = `
         <div>
           <div><strong>${t('potential_outbreak')}</strong></div>
-          <div>${zone.detected_disease}</div>
-          <div>${zone.region}</div>
+          <div>${localizeDisease(lang, zone.detected_disease)}</div>
+          <div>${localizeRegion(lang, zone.region)}</div>
           <div>${zone.report_count} ${t('reports_clustered')}</div>
           <div>${zone.density_percent}%</div>
         </div>
@@ -317,9 +332,9 @@ const Dashboard = (): JSX.Element => {
       const popup = `
         <div>
           <div><strong>${marker.report_id.slice(0, 8)}</strong></div>
-          <div>${marker.crop_type}</div>
-          <div>${marker.detected_disease}</div>
-          <div>${marker.region}</div>
+          <div>${localizeCrop(lang, marker.crop_type)}</div>
+          <div>${localizeDisease(lang, marker.detected_disease)}</div>
+          <div>${localizeRegion(lang, marker.region)}</div>
           <div>${statusLabel}</div>
         </div>
       `
@@ -364,7 +379,8 @@ const Dashboard = (): JSX.Element => {
           <div className="rtl:text-right flex-1 min-w-0">
             <p className="text-sm font-semibold">{t('outbreak_risk_title')}</p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--mourchid-muted)' }}>
-              {primaryAlert.detected_disease} · {primaryAlert.region} — {primaryAlert.report_count}{' '}
+              {localizeDisease(lang, primaryAlert.detected_disease)} ·{' '}
+              {localizeRegion(lang, primaryAlert.region)} — {primaryAlert.report_count}{' '}
               {t('reports_clustered')} ({primaryAlert.density_percent}%)
             </p>
           </div>
@@ -454,7 +470,7 @@ const Dashboard = (): JSX.Element => {
             <SelectItem value="all">{t('all_regions')}</SelectItem>
             {regions.map((region) => (
               <SelectItem key={region} value={region}>
-                {region}
+                {localizeRegion(lang, region)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -468,7 +484,7 @@ const Dashboard = (): JSX.Element => {
             <SelectItem value="all">{t('all_diseases')}</SelectItem>
             {diseases.map((disease) => (
               <SelectItem key={disease} value={disease}>
-                {disease}
+                {localizeDisease(lang, disease)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -515,7 +531,7 @@ const Dashboard = (): JSX.Element => {
                     className={`inline-block w-3 h-3 rounded-full ${diseaseColorClasses[disease]}`}
                   />
                   <span className="text-xs ml-1 rtl:ml-0 rtl:mr-1" style={{ color: 'var(--mourchid-muted)' }}>
-                    {disease}
+                    {localizeDisease(lang, disease)}
                   </span>
                 </div>
               ))}
@@ -564,7 +580,7 @@ const Dashboard = (): JSX.Element => {
                       }}
                     />
                     <span className="text-[11px]" style={{ color: 'var(--mourchid-muted)' }}>
-                      {day.day_label}
+                      {formatDayLabel(day, lang)}
                     </span>
                   </div>
                 )
@@ -583,7 +599,7 @@ const Dashboard = (): JSX.Element => {
               return (
                 <div key={item.disease}>
                   <div className="flex items-center justify-between gap-2 mb-1.5 rtl:flex-row-reverse">
-                    <p className="text-sm font-medium truncate">{item.disease}</p>
+                    <p className="text-sm font-medium truncate">{localizeDisease(lang, item.disease)}</p>
                     <span className="text-xs font-semibold tabular-nums" style={{ color: 'var(--mourchid-muted)' }}>
                       {item.count}
                     </span>
@@ -614,7 +630,7 @@ const Dashboard = (): JSX.Element => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => exportCsv(filteredReports, t)}
+              onClick={() => exportCsv(filteredReports, t, lang)}
             >
               {t('export_csv')}
             </Button>
@@ -645,12 +661,16 @@ const Dashboard = (): JSX.Element => {
                         {report.report_id.slice(0, 8)}
                       </TableCell>
                       <TableCell className="text-sm text-gray-700">
-                        {formatTime(report.created_at)}
+                        {formatTime(report.created_at, lang)}
                       </TableCell>
-                      <TableCell className="text-sm text-gray-700">{report.region}</TableCell>
-                      <TableCell className="text-sm text-gray-700">{report.crop_type}</TableCell>
                       <TableCell className="text-sm text-gray-700">
-                        {report.detected_disease}
+                        {localizeRegion(lang, report.region)}
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-700">
+                        {localizeCrop(lang, report.crop_type)}
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-700">
+                        {localizeDisease(lang, report.detected_disease)}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={statusClassName(report.status)}>

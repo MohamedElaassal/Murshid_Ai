@@ -5,6 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Mourchid-AI</title>
 
+    <script>
+        (function () {
+            try {
+                var stored = window.localStorage.getItem('mourchid_lang');
+                var html = document.documentElement;
+                if (stored === 'AR') {
+                    html.lang = 'ar';
+                    html.dir = 'rtl';
+                } else if (stored === 'FR') {
+                    html.lang = 'fr';
+                    html.dir = 'ltr';
+                } else if (stored === 'EN') {
+                    html.lang = 'en';
+                    html.dir = 'ltr';
+                }
+            } catch (error) {
+                // Ignore storage errors.
+            }
+        })();
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link

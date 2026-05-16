@@ -161,3 +161,123 @@ export const translations: Record<Lang, Record<TranslationKey, string>> = {
     switch_language: "Switch language",
   },
 }
+
+export const localeByLang: Record<Lang, string> = {
+  FR: 'fr-FR',
+  AR: 'ar-MA',
+  EN: 'en-US',
+}
+
+export const diseaseLabels: Record<Lang, Record<string, string>> = {
+  FR: {
+    'Peacock Spot': 'Peacock Spot',
+    'Verticillium Wilt': 'Verticillium Wilt',
+    'Citrus Greening': 'Citrus Greening',
+    Fusarium: 'Fusarium',
+    Mildiou: 'Mildiou',
+    'Oïdium': 'Oïdium',
+    Alternaria: 'Alternaria',
+    Rhizoctonia: 'Rhizoctonia',
+  },
+  AR: {
+    'Peacock Spot': 'بقعة الطاووس',
+    'Verticillium Wilt': 'ذبول الفيرتيسيليوم',
+    'Citrus Greening': 'اخضرار الحمضيات',
+    Fusarium: 'فيوزاريوم',
+    Mildiou: 'البياض الزغبي',
+    'Oïdium': 'البياض الدقيقي',
+    Alternaria: 'ألترناريا',
+    Rhizoctonia: 'ريزوكتونيا',
+  },
+  EN: {
+    'Peacock Spot': 'Peacock Spot',
+    'Verticillium Wilt': 'Verticillium Wilt',
+    'Citrus Greening': 'Citrus Greening',
+    Fusarium: 'Fusarium',
+    Mildiou: 'Downy mildew',
+    'Oïdium': 'Powdery mildew',
+    Alternaria: 'Alternaria',
+    Rhizoctonia: 'Rhizoctonia',
+  },
+}
+
+export const regionLabels: Record<Lang, Record<string, string>> = {
+  FR: {
+    'Souss-Massa': 'Souss-Massa',
+    'Meknès': 'Meknès',
+    'Saïss': 'Saïss',
+    Gharb: 'Gharb',
+    Haouz: 'Haouz',
+    'Tadla-Azilal': 'Tadla-Azilal',
+    Oriental: 'Oriental',
+    'Doukkala-Abda': 'Doukkala-Abda',
+    'Marrakech-Safi': 'Marrakech-Safi',
+    'Drâa-Tafilalet': 'Drâa-Tafilalet',
+  },
+  AR: {
+    'Souss-Massa': 'سوس-ماسة',
+    'Meknès': 'مكناس',
+    'Saïss': 'سايس',
+    Gharb: 'الغرب',
+    Haouz: 'الحوز',
+    'Tadla-Azilal': 'تادلة-أزيلال',
+    Oriental: 'الشرق',
+    'Doukkala-Abda': 'دكالة-عبدة',
+    'Marrakech-Safi': 'مراكش-آسفي',
+    'Drâa-Tafilalet': 'درعة-تافيلالت',
+  },
+  EN: {
+    'Souss-Massa': 'Souss-Massa',
+    'Meknès': 'Meknes',
+    'Saïss': 'Saiss',
+    Gharb: 'Gharb',
+    Haouz: 'Haouz',
+    'Tadla-Azilal': 'Tadla-Azilal',
+    Oriental: 'Oriental',
+    'Doukkala-Abda': 'Doukkala-Abda',
+    'Marrakech-Safi': 'Marrakesh-Safi',
+    'Drâa-Tafilalet': 'Draa-Tafilalet',
+  },
+}
+
+export const cropLabels: Record<Lang, Record<string, string>> = {
+  FR: {
+    Citrus: 'Citrus',
+    Olive: 'Olive',
+    Tomate: 'Tomate',
+    Argan: 'Argan',
+  },
+  AR: {
+    Citrus: 'حمضيات',
+    Olive: 'زيتون',
+    Tomate: 'طماطم',
+    Argan: 'أركان',
+  },
+  EN: {
+    Citrus: 'Citrus',
+    Olive: 'Olive',
+    Tomate: 'Tomato',
+    Argan: 'Argan',
+  },
+}
+
+const getLabel = (
+  labels: Record<Lang, Record<string, string>>,
+  lang: Lang,
+  value: string | null | undefined,
+): string => {
+  if (!value) {
+    return ''
+  }
+
+  return labels[lang][value] ?? value
+}
+
+export const localizeDisease = (lang: Lang, value: string | null | undefined): string =>
+  getLabel(diseaseLabels, lang, value)
+
+export const localizeRegion = (lang: Lang, value: string | null | undefined): string =>
+  getLabel(regionLabels, lang, value)
+
+export const localizeCrop = (lang: Lang, value: string | null | undefined): string =>
+  getLabel(cropLabels, lang, value)

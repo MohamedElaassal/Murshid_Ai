@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
 import { useLang } from '../hooks/useLang'
-import { OutbreakAlert, SharedPageProps, TranslationKey } from '../types'
+import { localeByLang, localizeDisease, localizeRegion } from '../translations'
+import { Lang, OutbreakAlert, SharedPageProps, TranslationKey } from '../types'
 
 const severityClassName = (severity: OutbreakAlert['severity']): string => {
   if (severity === 'high') {
@@ -22,9 +23,13 @@ const severityKey = (severity: OutbreakAlert['severity']): TranslationKey => {
   return 'severity_low'
 }
 
-const formatAlertTime = (value: string): string => {
+const formatAlertTime = (value: string, lang: Lang): string => {
   const date = new Date(value)
-  return date.toLocaleString()
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  return date.toLocaleString(localeByLang[lang])
 }
 
 interface NotificationPanelProps {
@@ -34,7 +39,7 @@ interface NotificationPanelProps {
 export const NotificationPanel = ({ onFocusMap }: NotificationPanelProps): JSX.Element => {
   const { outbreak_alerts: alerts, unread_alert_count: unreadCount } =
     usePage<SharedPageProps>().props
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const [open, setOpen] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
 
@@ -131,15 +136,17 @@ export const NotificationPanel = ({ onFocusMap }: NotificationPanelProps): JSX.E
                 >
                   <div className="flex items-start justify-between gap-2 rtl:flex-row-reverse">
                     <div className="rtl:text-right min-w-0">
-                      <p className="text-sm font-medium">{alert.detected_disease}</p>
+                      <p className="text-sm font-medium">
+                        {localizeDisease(lang, alert.detected_disease)}
+                      </p>
                       <p className="text-xs mt-0.5" style={{ color: 'var(--mourchid-muted)' }}>
-                        {alert.region} · {alert.report_count} {t('reports_clustered')}
+                        {localizeRegion(lang, alert.region)} · {alert.report_count} {t('reports_clustered')}
                       </p>
                       <p className="text-xs mt-1 line-clamp-2" style={{ color: 'var(--mourchid-muted)' }}>
                         {alert.message}
                       </p>
                       <p className="text-[10px] mt-1" style={{ color: 'var(--mourchid-muted)' }}>
-                        {formatAlertTime(alert.created_at)}
+                        {formatAlertTime(alert.created_at, lang)}
                       </p>
                     </div>
                     <Badge variant="outline" className={severityClassName(alert.severity)}>

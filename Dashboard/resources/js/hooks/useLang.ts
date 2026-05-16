@@ -58,6 +58,26 @@ export const useLang = (): {
   useEffect(() => {
     applyDocumentLang(lang)
     window.localStorage.setItem('mourchid_lang', lang)
+    window.dispatchEvent(new CustomEvent('mourchid-lang-change'))
+  }, [lang])
+
+  useEffect(() => {
+    const syncLang = (): void => {
+      const stored = window.localStorage.getItem('mourchid_lang')
+      if (stored === 'FR' || stored === 'AR' || stored === 'EN') {
+        if (stored !== lang) {
+          setLang(stored)
+        }
+      }
+    }
+
+    window.addEventListener('storage', syncLang)
+    window.addEventListener('mourchid-lang-change', syncLang)
+
+    return () => {
+      window.removeEventListener('storage', syncLang)
+      window.removeEventListener('mourchid-lang-change', syncLang)
+    }
   }, [lang])
 
   const t = useMemo(() => {
