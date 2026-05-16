@@ -1,0 +1,30 @@
+# MOURCHID-AI — Hackathon MVP
+# Install with:  pip install -r requirements.txt
+
+pyTelegramBotAPI>=4.18.0
+smolagents>=0.2.0
+litellm>=1.40.0
+psycopg2-binary>=2.9.9
+google-generativeai>=0.5.0    # litellm gemini backend
+pillow>=10.0.0                # image handling fallback
+
+
+# ─── QUICK START ───────────────────────────────────────────────────────────────
+#
+# 1. Create a .env file (or export vars):
+#
+#    export TELEGRAM_BOT_TOKEN="7xxxxxxxxx:AAF..."
+#    export GEMINI_API_KEY="AIzaSy..."
+#    export SUPABASE_DB_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/postgres"
+#    export ADMIN_CHAT_ID="123456789"          # your personal Telegram chat ID
+#
+# 2. Run schema.sql once in the Supabase SQL Editor.
+#
+# 3. Start the bot:
+#    python bot.py
+#
+# 4. On-stage demo flow:
+#    a. Send any crop photo to the bot → get instant Darija diagnosis
+#    b. Reply "1" → CLOSED_SUCCESS   /   Reply "2" → CLOSED_FAILED
+#    c. Admin sends /demo_checkin <farmer_chat_id> to trigger a follow-up live
+#    d. Admin sends /status to see DB counters
