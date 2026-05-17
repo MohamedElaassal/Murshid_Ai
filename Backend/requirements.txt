@@ -1,30 +1,47 @@
 # MOURCHID-AI — Hackathon MVP
 # Install with:  pip install -r requirements.txt
 
-pyTelegramBotAPI>=4.18.0
-smolagents>=0.2.0
-litellm>=1.40.0
-psycopg2-binary>=2.9.9
-google-generativeai>=0.5.0    # litellm gemini backend
-pillow>=10.0.0                # image handling fallback
+# Web Framework & API
+fastapi>=0.110.0
+uvicorn>=0.29.0
+httpx>=0.27.0
+pydantic>=2.6.0
+python-dotenv>=1.0.1
 
+# Database
+SQLAlchemy>=2.0.29
+
+# AI & Vision
+torch>=2.0.0
+torchvision>=0.15.0
+pillow>=10.0.0
+litellm>=1.40.0
+
+# RAG & Document Processing
+pandas>=2.0.0
+lxml>=4.9.0
+beautifulsoup4>=4.12.0
+
+# (Optional) For RAG later
+# langchain>=0.1.0
+# faiss-cpu>=1.8.0
+# pypdf>=4.1.0
 
 # ─── QUICK START ───────────────────────────────────────────────────────────────
 #
 # 1. Create a .env file (or export vars):
 #
 #    export TELEGRAM_BOT_TOKEN="7xxxxxxxxx:AAF..."
-#    export GEMINI_API_KEY="AIzaSy..."
-#    export SUPABASE_DB_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/postgres"
-#    export ADMIN_CHAT_ID="123456789"          # your personal Telegram chat ID
 #
-# 2. Run schema.sql once in the Supabase SQL Editor.
+# 2. Run the server:
+#    uvicorn main:app --reload
 #
-# 3. Start the bot:
-#    python bot.py
+# 3. Expose your local server using ngrok:
+#    ngrok http 8000
 #
-# 4. On-stage demo flow:
+# 4. Set the Telegram webhook to your ngrok URL:
+#    python set_webhook.py "https://<your-ngrok-url>.ngrok-free.app/webhook"
+#
+# 5. On-stage demo flow:
 #    a. Send any crop photo to the bot → get instant Darija diagnosis
 #    b. Reply "1" → CLOSED_SUCCESS   /   Reply "2" → CLOSED_FAILED
-#    c. Admin sends /demo_checkin <farmer_chat_id> to trigger a follow-up live
-#    d. Admin sends /status to see DB counters
