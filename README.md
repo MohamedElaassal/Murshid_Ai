@@ -1,6 +1,9 @@
-# Mourchid-AI: National Agricultural Triage Layer 🇲🇦🌾
+# 🇲🇦 Mourchid-AI: The Moroccan Way to Agricultural Triage 🌾
 
-*An advanced, event-driven, AI-powered epidemiological radar for Moroccan agriculture.*
+<div align="center">
+  <h2>ⵣ Marhaba (Welcome) ⵣ</h2>
+  <p><i>An advanced, event-driven, AI-powered epidemiological radar built for Moroccan agriculture.</i></p>
+</div>
 
 ---
 
@@ -121,3 +124,10 @@ curl -F "url=https://your-ngrok-url.app/webhook" https://api.telegram.org/bot<YO
 ## 🤝 Contributing
 
 We enforce clean API contracts and strict data typing. All new data models must be defined in `schemas.py` using **Pydantic** before being integrated into the pipeline. If you're modifying the Airflow DAGs, test them locally before pushing.
+
+---
+
+## 🙏 Acknowledgments & Big Thanks
+
+**A massive thank you to HackAI 4.0 for hosting this incredible hackathon!** 🎉
+This project would not have been possible without the amazing environment, the mentors, and the relentless energy of the HackAI community. 🇲🇦❤️
