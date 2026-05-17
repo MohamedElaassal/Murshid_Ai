@@ -16,6 +16,7 @@ torch>=2.0.0
 torchvision>=0.15.0
 pillow>=10.0.0
 litellm>=1.40.0
+elevenlabs>=1.0.0
 
 # RAG & Document Processing
 pandas>=2.0.0
@@ -32,6 +33,8 @@ beautifulsoup4>=4.12.0
 # 1. Create a .env file (or export vars):
 #
 #    export TELEGRAM_BOT_TOKEN="7xxxxxxxxx:AAF..."
+#    export ELEVENLABS_API_KEY="..."          # optional TTS voice replies
+#    export ELEVENLABS_VOICE_ID="..."         # optional; default in speech.py
 #
 # 2. Run the server:
 #    uvicorn main:app --reload
